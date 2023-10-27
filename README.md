@@ -16,18 +16,18 @@ $$
 
 $$
 C_2 = \mu_2= \frac{\alpha_2}{\alpha_2+\beta_2}
-$
+$$
 
-Each agents starts with some prior beliefs about the success rate of each bandit. Alphas and betas for the priors are usually pulled from an uniform distribution between some interval.
+Each agents starts with some prior beliefs about the success rate of each bandit. Alphas and betas for the priors are usually pulled from some uniform distribution.
 
-Agents can also share data about their pulls. The simulation runs in rounds: each round agents pull from one of the two bandits, share data and update their assessments.
+Agents can also share data about their pulls. The simulation runs in rounds: each round, agents pull from one of the two bandits, share data and update their assessments.
 
 ## Usage in philosophy of science
 
-This model has be used to study grup learning under different conditions. Some examples include:
+This model has been used to study grup learning under different conditions. Some examples include:
 
 - Zollman ([2007](https://www.cambridge.org/core/journals/philosophy-of-science/article/communication-structure-of-epistemic-communities/B1A3770084C04C26A3533626E7AABBFD)) studied how different ways of sharing the data between agents (i.e., the social structure of the model) affect the speed and successfulness of the group inquiry
-- Kummerfeld & Zollman ([2016](https://www.journals.uchicago.edu/doi/full/10.1093/bjps/axv013)) studied different exploratory strategies where agents pull from the preferred bandit with 1 - epsilon probability
+- Kummerfeld & Zollman ([2016](https://www.journals.uchicago.edu/doi/full/10.1093/bjps/axv013)) studied different exploratory strategies where agents pull from the preferred bandit with 1 - $\epsilon$ probability
 - Weatherall, O’Connor and Bruner ([2020](https://www.journals.uchicago.edu/doi/10.1093/bjps/axy062)) looked at what happened if some agents selectively report their data or if some agents can make more pulls each round than others
 - Watherall and O’Connor ([2020](https://link.springer.com/article/10.1007/s11229-019-02520-2)) studied the effects of agents confirming to the majority when choosing which bandit to pull
 - Fry and Šešelja ([2020](https://www.journals.uchicago.edu/doi/10.1093/bjps/axy039)) tested the robustness of Zollman’s 2007 and 2010 results under more relaxed assumptions
@@ -63,9 +63,13 @@ where C’ is a posterior assessment of an agent.
 
 Agents then also update their alphas and betas so that the variance of their distributions remains the same.
 
-$\alpha'_i = (\frac{1-C_i'}{\sigma^2_i} - \frac{1}{C_i'})\times C'^2_i$
+$$
+\alpha'_i = (\frac{1-C_i'}{\sigma^2_i} - \frac{1}{C_i'})\times C'^2_i
+$$
 
-$\beta'_i = \alpha_i\times(\frac{1}{C'_i}-1)$
+$$
+\beta'_i = \alpha_i\times(\frac{1}{C'_i}-1)
+$$
 
 (They do this for the distributions for both bandits.)
 
