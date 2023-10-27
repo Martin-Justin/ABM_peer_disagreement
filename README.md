@@ -10,9 +10,13 @@ In this model, agents can choose to pull from one of the two slot machines or �
 
 Agents’ beliefs about the success rate of the two bandits are represented by two beta distributions, where alpha represents the number of successful pulls from a bandit and beta the number of unsuccessful pulls. Agents’ assessments of the bandits are thus equal to the means of the two distributions. 
 
-$C_1 = \mu_1= \frac{\alpha_1}{\alpha_1+\beta_1}$$
+$$
+C_1 = \mu_1= \frac{\alpha_1}{\alpha_1+\beta_1}
+$$
 
-$C_2 = \mu_2= \frac{\alpha_2}{\alpha_2+\beta_2}$
+$$
+C_2 = \mu_2= \frac{\alpha_2}{\alpha_2+\beta_2}
+$
 
 Each agents starts with some prior beliefs about the success rate of each bandit. Alphas and betas for the priors are usually pulled from an uniform distribution between some interval.
 
@@ -43,7 +47,7 @@ In the model, agents who act in accordance with this norm average their assessme
  
 
 $$
-C_{avg} = \frac{\sum_{i=1}^{n}C_i+C_{i+1}+...+C_n}{n},
+C_{avg} = \frac{\sum_{i=1}^{n} C_i+C_{i+1}+...+C_n}{n},
 $$
 
 where ***n*** is the number of agents. 
