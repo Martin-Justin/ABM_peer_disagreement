@@ -187,51 +187,20 @@ class Simulation:
 
 
 def space(runs, rounds, parameters, file_path, file_name):   # Parameters must be a list of lists with the right order of elements
-    output = open(file_path+file_name, "w")
+    results = dict()
     combinations = list(product(*parameters))   # This calculates all the different combinations of the given parameters
+
     for combination in combinations:            # Runs simulation for every combination of parameters
         simulation = Simulation(runs, rounds)
         t, data_sharing, nr_agents, pulls, theory1, theory2, interval, n = combination
         for i in range(runs):
             simulation.add_results(simulation.run(rounds, t, data_sharing, nr_agents, pulls, theory1, theory2, interval, n))
-        output.write(f"type: {t}, data sharing: {data_sharing}, agents: {nr_agents}, pulls: {pulls}, bandits: {theory1, theory2},  special: {interval, n}\n {simulation.calculate_output()}\n\n")
-    output.flush()  # this function returns results as a .txt file with data for all simulations
+        results[t] = simulation.calculate_output()
+
+    return results
 
 
 parameters = [["Conciliate", "Steadfast"], [True], [10], [1000], [0.501], [0.5], [None], [None]]
 space(100, 500, parameters, "refactored_code_test/", "test_random.txt")
 
 
-
-
-
-
-# def run(type, data_sharing, nr_agents, rounds, pulls, theory1, theory2, interval, n):
-#     result = list()
-#     round = Round()
-#     result.append(round.create_agents(nr_agents))
-#
-#     for i in range(rounds):
-#         if data_sharing:
-#             round.collect_data(theory1, theory2, pulls)
-#         round.action(type, interval, n)
-#         result.append(round.results())
-#
-#     return result
-#
-#
-# def simulation(runs, file_path, file_name, type, data_sharing, nr_agents, rounds, pulls, theory1, theory2, interval, n):
-#     results = np.empty(rounds+1, dtype=float)
-#     output = open(file_path+file_name, "w")
-#     for i in range(runs):
-#         result = np.array(run(type, data_sharing, nr_agents, rounds, pulls, theory1, theory2, interval, n), dtype=float)
-#         results = np.vstack((results, result))
-#     results_calculated = list()
-#     for i in range(0, rounds + 1):
-#         results_calculated.append(np.sum(results[1:, i] / runs))
-#     output.write(f"{type}, data sharing {data_sharing}, {nr_agents} agents, {pulls} pulls, {interval}, {n}: {results_calculated}\n\n")
-#     output.flush()
-#
-#
-# simulation(100, "refactored_code_test/", "test3_doubting.txt", "Doubt_halving", True, 10, 500, 1000, 0.501, 0.5, None, None)
-#

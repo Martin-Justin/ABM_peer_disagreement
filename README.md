@@ -2,7 +2,7 @@
 
 Documentation for a modification of an agent based model first introduced to philosophy of science by Kevin Zollman ([2007](https://www.cambridge.org/core/journals/philosophy-of-science/article/communication-structure-of-epistemic-communities/B1A3770084C04C26A3533626E7AABBFD), [2010](https://link.springer.com/article/10.1007/s10670-009-9194-6)).
 
-This is very much still work in progress. The development of this model is part of my masters’ thesis project at Faculty of Arts, University of Ljubljana. 
+This is very much still work in progress. The development of this model is part of my masters’ thesis project at Faculty of Arts, University of Ljubljana (supervised by Olga Markič and Borut Trpin), in collaboration with Dunja Šešelja and Christian Straßer form the Reasoning, Rationality and Science group at RUB.
 
 ## Basics
 
@@ -28,7 +28,7 @@ This model has been used to study grup learning under different conditions. Some
 
 - Zollman ([2007](https://www.cambridge.org/core/journals/philosophy-of-science/article/communication-structure-of-epistemic-communities/B1A3770084C04C26A3533626E7AABBFD)) studied how different ways of sharing the data between agents (i.e., the social structure of the model) affect the speed and successfulness of the group inquiry
 - Kummerfeld & Zollman ([2016](https://www.journals.uchicago.edu/doi/full/10.1093/bjps/axv013)) studied different exploratory strategies where agents pull from the preferred bandit with 1 - $\epsilon$ probability
-- Weatherall, O’Connor and Bruner ([2020](https://www.journals.uchicago.edu/doi/10.1093/bjps/axy062)) looked at what happened if some agents selectively report their data or if some agents can make more pulls each round than others
+- Weatherall, O’Connor and Bruner ([2020](https://www.journals.uchicago.edu/doi/10.1093/bjps/axy062)) looked at what happens if some agents selectively report their data or if some agents can make more pulls each round than others
 - Watherall and O’Connor ([2020](https://link.springer.com/article/10.1007/s11229-019-02520-2)) studied the effects of agents confirming to the majority when choosing which bandit to pull
 - Fry and Šešelja ([2020](https://www.journals.uchicago.edu/doi/10.1093/bjps/axy039)) tested the robustness of Zollman’s 2007 and 2010 results under more relaxed assumptions
 
@@ -38,7 +38,7 @@ In this version of the model, I tried to implement the possibility of agents to 
 
 In addition to pulling from bandits, sharing data and updating their assessments, agents can thus perform some additional actions.
 
-### **********************Conciliation**********************
+### Conciliation
 
 Some epistemologists [suggest](https://www.jstor.org/stable/4494542) that when two epistemic peers disagree, they should “split the difference” between their believes. 
 
@@ -73,7 +73,7 @@ $$
 
 (They do this for the distributions for both bandits.)
 
-### Degree of conciliation
+### Bounded confidence conciliation
 
 In an alternative version of this norm, agents only split the difference with agents who’s assessments of the success rate of the bandits is not to distant from theirs. 
 
@@ -139,6 +139,6 @@ Some epistemologists also suggest that in face of peer disagreement, agents shou
 
 Agents who act in accordance with this norm act in the same way as the agents in Zollman’s version of the model. They collect data, exchange it and update based on it.
 
-## Plan of work
+## Plan
 
 In further developing the model, I plan to implement some other, perhaps more principled was of doubtful behavior. In addition, I want to try some other exploratory strategies of agents and explore the interaction between them and the above described behaviors.
