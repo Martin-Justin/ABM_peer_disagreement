@@ -186,7 +186,7 @@ class Simulation:
         return results_calculated
 
 
-def space(runs, rounds, parameters, file_path, file_name):   # Parameters must be a list of lists with the right order of elements
+def space(runs, rounds, parameters, focus):   # Parameters must be a list of lists with the right order of elements
     results = dict()
     combinations = list(product(*parameters))   # This calculates all the different combinations of the given parameters
 
@@ -195,12 +195,9 @@ def space(runs, rounds, parameters, file_path, file_name):   # Parameters must b
         t, data_sharing, nr_agents, pulls, theory1, theory2, interval, n = combination
         for i in range(runs):
             simulation.add_results(simulation.run(rounds, t, data_sharing, nr_agents, pulls, theory1, theory2, interval, n))
-        results[t] = simulation.calculate_output()
+            print(f"{combination}, run {i} of {runs}")
+        results[combination[focus]] = simulation.calculate_output()
 
     return results
-
-
-parameters = [["Conciliate", "Steadfast"], [True], [10], [1000], [0.501], [0.5], [None], [None]]
-space(100, 500, parameters, "refactored_code_test/", "test_random.txt")
 
 
