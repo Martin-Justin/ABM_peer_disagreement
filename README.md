@@ -141,7 +141,7 @@ Agents who act in accordance with this norm act in the same way as the agents in
 
 ## Running the model
 
-The model is run using the function space(runs, rounds, parameters). Argument *runs* determines the number of iterations for every simulation set-up. Argument *rounds* determines the number of rounds the agents perform. *Parameters* should be given as a list of lists  in the following order type, data sharing, number of agents, pulls, success rate of theory 1, success rate of theory 2, distance, N. 
+The model is run using the function `space(runs, rounds, parameters)`. Argument `runs` determines the number of iterations for every simulation set-up. Argument `rounds` determines the number of rounds the agents perform. `Parameters` should be given as a list of lists  in the following order type, data sharing, number of agents, pulls, success rate of theory 1, success rate of theory 2, distance, N. 
 
 Possible values are:
 
