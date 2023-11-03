@@ -156,6 +156,8 @@ distance = float    # between 0 and 1
 N = int
 ```
 
+Right now, this function returns a dictionary. Each set-up of the simulation is represented by one item: key is a list of the used parameters and the value is a 2d array where each row represents the results of one run of the set-up. The function `write_file(data, path, name, rounds)` takes this dictionary as an argument and saves the data as a .csv file.
+
 ## Plan
 
 In further developing the model, I plan to implement some other, perhaps more principled was of doubtful behavior. In addition, I want to try some other exploratory strategies of agents and explore the interaction between them and the above described behaviors.
