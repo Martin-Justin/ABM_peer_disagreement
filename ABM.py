@@ -13,6 +13,7 @@ class Round:
             agent = Agent(i)
             self.agents.append(agent)
             self.round_results.append(agent.my_theory)
+        # return self.round_results
         return self.round_results.count(True) / nr_agents
 
     def collect_data(self, theory1, theory2, pulls, sharing):     # Does two things based on the value of the parameter "sharing"
@@ -81,6 +82,7 @@ class Round:
         self.round_results = list()   # ... the number of agents who support theory1 vs theory2
         for agent in self.agents:
             self.round_results.append(agent.my_theory)
+        # return self.round_results
         return self.round_results.count(True) / len(self.agents)
 
 
@@ -108,8 +110,12 @@ class Agent:
         self.alpha2 += alphas2
         self.beta1 += betas1
         self.beta2 += betas2
-        self.mean1, self.var1 = beta.stats(self.alpha1, self.beta1, moments="mv")
-        self.mean2, self.var2 = beta.stats(self.alpha2, self.beta2, moments="mv")
+        self.mean1 = self.alpha1 / (self.alpha1 + self.beta1)
+        self.mean2 = self.alpha2 / (self.alpha2 + self.beta2)
+        self.var1 = (self.alpha1 * self.beta1) / ((self.alpha1 + self.beta1) ** 2 * (self.alpha1 + self.beta1 + 1))
+        self.var2 = (self.alpha2 * self.beta2) / ((self.alpha2 + self.beta2) ** 2 * (self.alpha2 + self.beta2 + 1))
+        # self.mean1, self.var1 = beta.stats(self.alpha1, self.beta1, moments="mv")
+        # self.mean2, self.var2 = beta.stats(self.alpha2, self.beta2, moments="mv")
 
     def update(self, n, theory1, theory2):      # Updating alpha, beta, mean, variance for agents who do not share data
         if self.my_theory:
@@ -136,9 +142,9 @@ class Agent:
         self.alpha2 = ((1 - self.mean2) / self.var2 - 1 / self.mean2) * self.mean2 ** 2
         self.beta2 = self.alpha2 * (1 / self.mean2 - 1)
 
-    def doubt(self):               # Changing variance for "doubtful" agents
+    def doubt(self):   # Changing variance for "doubtful" agents
         if self.my_theory:
-            new_sum1 = (self.alpha1 + self.beta1) / 2       # Agents half the sum of alpha and beta
+            new_sum1 = (self.alpha1 + self.beta1) / 2      # Agents half the sum of alpha and beta
             self.alpha1 = self.mean1 * new_sum1             # mean stays the same
             self.beta1 = (1 - self.mean1) * new_sum1
         else:
@@ -160,7 +166,7 @@ class Agent:
 
 class Simulation:
     def __init__(self, runs, rounds):   # One simulation represents multiple runs of the model with the same parameters
-        self.results = np.empty(rounds+1, dtype=float)
+        self.results = None
         self.rounds = rounds
         self.runs = runs
 
@@ -176,7 +182,10 @@ class Simulation:
         return result       # returs results for one run of the model, as a list
 
     def add_results(self, result):
-        self.results = np.vstack((self.results, result))         # adds results in a 2d array (a table)
+        if self.results is None:
+            self.results = np.array(result)       # adds results in a 2d array (a table)
+        else:
+            self.results = np.vstack((self.results, result))
 
     def calculate_output(self):
         results_calculated = list()
@@ -186,7 +195,7 @@ class Simulation:
         return results_calculated
 
 
-def space(runs, rounds, parameters, focus):   # Parameters must be a list of lists with the right order of elements
+def space(runs, rounds, parameters):   # Parameters must be a list of lists with the right order of elements
     results = dict()
     combinations = list(product(*parameters))   # This calculates all the different combinations of the given parameters
 
@@ -195,8 +204,9 @@ def space(runs, rounds, parameters, focus):   # Parameters must be a list of lis
         t, data_sharing, nr_agents, pulls, theory1, theory2, interval, n = combination
         for i in range(runs):
             simulation.add_results(simulation.run(rounds, t, data_sharing, nr_agents, pulls, theory1, theory2, interval, n))
-            print(f"{combination}, run {i} of {runs}")
-        results[combination[focus]] = simulation.calculate_output()
+            if i % 100 == 0:
+                print(f"{combination}, run {i} of {runs}")
+        results[combination] = simulation.results
 
     return results
 

@@ -139,6 +139,23 @@ Some epistemologists also suggest that in face of peer disagreement, agents shou
 
 Agents who act in accordance with this norm act in the same way as the agents in Zollman’s version of the model. They collect data, exchange it and update based on it.
 
+## Running the model
+
+The model is run using the function space(runs, rounds, parameters). Argument *runs* determines the number of iterations for every simulation set-up. Argument *rounds* determines the number of rounds the agents perform. *Parameters* should be given as a list of lists  in the following order type, data sharing, number of agents, pulls, success rate of theory 1, success rate of theory 2, distance, N. 
+
+Possible values are:
+
+```python
+type = ["Conciliate", "Steadfast", "Doubt_halving", "Doubt_N", "Conciliate_degree"]
+data_sharing = [True, False]
+nr_agents = int
+pulls = int
+t1 = float    # between 0 and 1
+t2 = float    # between 0 and 1
+distance = float    # between 0 and 1
+N = int
+```
+
 ## Plan
 
 In further developing the model, I plan to implement some other, perhaps more principled was of doubtful behavior. In addition, I want to try some other exploratory strategies of agents and explore the interaction between them and the above described behaviors.
