@@ -139,7 +139,7 @@ Some epistemologists also suggest that in face of peer disagreement, agents shou
 
 Agents who act in accordance with this norm act in the same way as the agents in Zollman’s version of the model. They collect data, exchange it and update based on it.
 
-### $\epsilon$-greedy agents
+### Epsilon-greedy agents
 
 In addition to different norms of reacting to disagreement, the agents can also have different norms of choosing from with bandit to pull. 
 
