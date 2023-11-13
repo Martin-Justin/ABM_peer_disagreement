@@ -113,7 +113,6 @@ $$
 
 In other words, they halve the sum of alpha and beta and calculate new ones so that the mean of the distribution remains the same. That way, the variance increases. 
 
-(They do this only for the distribution of the bandit they think is the better one).
 
 ********************Doubt #2********************
 
@@ -131,7 +130,8 @@ $$
 
 Where **a** is the count of (dis)agreeing agents and **N** is a parameter of the model.
 
-(They do this for the distributions for both bandits.)
+This norm can be broken down into *boosting* and *doubting*. *Boosting* agents just count the number of agents who agree with them and then boost their confidence by $a \times N$. *Douting* agents do the opposite: they count the number of disagreeing agents and lower their confidence by $a \times N$.
+
 
 ### Steadfastness
 
@@ -139,14 +139,40 @@ Some epistemologists also suggest that in face of peer disagreement, agents shou
 
 Agents who act in accordance with this norm act in the same way as the agents in Zollman’s version of the model. They collect data, exchange it and update based on it.
 
+### $\epsilon$-greedy agents
+
+In addition to different norms of reacting to disagreement, the agents can also have different norms of choosing from with bandit to pull. 
+
+In the basic setup, the agents simply pull from the bandit that they think has a higher chance of success. But there are different ways in which we can vary this norm. Kummerfeld and Zollman (2016), for example, introduced what they call $\epsilon$-greedy agents.
+
+$\epsilon$-greedy agents pull from the preferred bandit with $1 - \epsilon$ probability. In Kummerfeld and Zollman, $\epsilon$ is given as a parameter of the model. Here, I calculate $\epsilon$ in the following way:
+
+$$ 
+\epsilon = 
+    \begin{cases}
+      \frac{1}{log_10(\alpha + \beta)}, & \text{if}\ \alpha + \beta > 1000 \\
+      3, & \text{otherwise}
+    \end{cases}
+$$
+
 ## Running the model
 
-The model is run using the function `space(runs, rounds, parameters)`. Argument `runs` determines the number of iterations for every simulation set-up. Argument `rounds` determines the number of rounds the agents perform. `Parameters` should be given as a list of lists  in the following order type, data sharing, number of agents, pulls, success rate of theory 1, success rate of theory 2, distance, N. 
+The model is run using the function `space(runs, rounds, parameters)`. Argument `runs` determines the number of iterations for every simulation set-up. Argument `rounds` determines the number of rounds the agents perform. `Parameters` should be given as a list of lists in the following order:
+1. type of agents
+2. data sharing (True/False)
+3. number of agents, 
+4. number pulls per round, 
+5. success rate of theory 1, 
+6. success rate of theory 2, 
+7. distance for bounded confidence conciliation, 
+8. N, 
+9. number of agents working on the better theory at the beginning of the simulation
+10. how are agents choosing the bandit
 
 Possible values are:
 
 ```python
-type = ["Conciliate", "Steadfast", "Doubt_halving", "Doubt_N", "Conciliate_degree"]
+type = ["Conciliate", "Steadfast", "Doubt_halving", "Doubt", "Boost", "Conciliate_degree"]
 data_sharing = [True, False]
 nr_agents = int
 pulls = int
@@ -154,6 +180,8 @@ t1 = float    # between 0 and 1
 t2 = float    # between 0 and 1
 distance = float    # between 0 and 1
 N = int
+nr_good_agents = int    # between 0 and nr_agents
+choosing = ["Normal", "Greedy"]
 ```
 
 Right now, this function returns a dictionary. Each set-up of the simulation is represented by one item: key is a list of the used parameters and the value is a 2d array where each row represents the results of one run of the set-up. The function `write_file(data, path, name, rounds)` takes this dictionary as an argument and saves the data as a .csv file.

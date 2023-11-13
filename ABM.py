@@ -1,20 +1,35 @@
 import numpy as np
-from scipy.stats import beta
 from itertools import product
+from math import log10
 
 
 class Round:
     def __init__(self):
         self.agents = list()
-        self.round_results = list()
+        self.round_results_convergence = list()
 
-    def create_agents(self, nr_agents):   # Creates a list of agents, the number of agents is given as an argument
-        for i in range(nr_agents):        # returns the ratio of agents supporting theory1 vs theory2
-            agent = Agent(i)
-            self.agents.append(agent)
-            self.round_results.append(agent.my_theory)
+    def create_agents(self, nr_agents, nr_good, kind):   # Creates a list of agents, the number of agents is given as an argument
+        agent_type = {"Greedy": Greedy, "Normal": Agent, "Cautious": Cautious}
+        if nr_good or nr_good == 0:
+            j = 0
+            for i in range(nr_good):        # returns the ratio of agents supporting theory1 vs theory2
+                agent = agent_type[kind](j, 1)
+                self.agents.append(agent)
+                self.round_results_convergence.append(agent.my_theory)
+                j += 1
+            for i in range(nr_agents - nr_good):
+                agent = agent_type[kind](j, 2)
+                self.agents.append(agent)
+                self.round_results_convergence.append(agent.my_theory)
+                j += 1
+        else:
+            for i in range(nr_agents):
+                agent = agent_type[kind](i, 0)
+                self.agents.append(agent)
+                self.round_results_convergence.append(agent.my_theory)
+
         # return self.round_results
-        return self.round_results.count(True) / nr_agents
+        return self.round_results_convergence.count(True) / nr_agents
 
     def collect_data(self, theory1, theory2, pulls, sharing):     # Does two things based on the value of the parameter "sharing"
         if sharing:                                               # if sharing == True:
@@ -39,23 +54,33 @@ class Round:
                 agent.conciliate(agg1, agg2)      # agents then take these averages as their new credences
                 agent.update_theory()             # they also update which theory they work on
 
-        if type == "Doubt_halving":    # Here, agents change their variance not credence
-            for agent in self.agents:
-                agent.update_theory()
-                for agent2 in self.agents:
-                    if agent.my_theory != agent2.my_theory:    # If agents find another agent who support a different theory
-                        agent.doubt()                          # they change their variance in a way described below
-                        break
-
-        if type == "Doubt_N":         # Here, agents change their variance in a different way
+        if type == "Boost":    # Here, agents change their variance not credence
             for agent in self.agents:
                 agent.update_theory()
                 n0 = 0
                 for agent2 in self.agents:
-                    if agent.name != agent2.name:          # Each agent count the number of agents who (dis)agree with them
-                        n0 += (1 if agent.my_theory == agent2.my_theory else -1)    # This is represented by one number
-                if n0:                                     # if this number is different from 0 ...
-                    agent.doubt_alternative(n0, n)         # they recalculate the agents variance
+                    if agent.name != agent2.name:     # Each agent count the number of agents who (dis)agree with them
+                        n0 += 1 if agent.my_theory == agent2.my_theory else -1
+                agent.doubt_alternative(n0, n)         # they recalculate the agents variance
+
+        if type == "Doubt":         # Here, agents change their variance in a different way
+            for agent in self.agents:
+                agent.update_theory()
+                n0 = 0
+                for agent2 in self.agents:
+                    if agent.name != agent2.name:     # Each agent count the number of agents who (dis)agree with them
+                        n0 -= 1 if agent.my_theory != agent2.my_theory else 0
+                #         n0 += (1 if agent.my_theory == agent2.my_theory else -1)    # This is represented by one number
+                agent.doubt_alternative(n0, n)         # they recalculate the agents variance
+
+        if type == "Doubt_halving":
+            for agent in self.agents:
+                agent.update_theory()
+                for agent2 in self.agents:
+                    if agent.my_theory != agent2.my_theory:
+                        agent.doubt()
+                        break
+
 
         if type == "Conciliate_degree":     # Here, agents split the difference only with agents within certain interval
             credences1 = [agent.mean1 for agent in self.agents]    # The interval is given as a parameter of the model
@@ -79,22 +104,46 @@ class Round:
                 agent.update_theory()
 
     def results(self):                # This function report results of the round in the form of a ration between ...
-        self.round_results = list()   # ... the number of agents who support theory1 vs theory2
+        self.round_results_convergence = list()   # ... the number of agents who support theory1 vs theory2
+        # variance = list()
+        # sums = list()
+        epsilons = list()
         for agent in self.agents:
-            self.round_results.append(agent.my_theory)
+            self.round_results_convergence.append(agent.my_theory)
+            # epsilons.append(agent.epsilon)
+            # sums.append(agent.alpha1 + agent.beta1)
+            # variance.append(agent.var1)
         # return self.round_results
-        return self.round_results.count(True) / len(self.agents)
+        return self.round_results_convergence.count(True) / len(self.agents)
+        # return (sum(sums) / len(self.agents)) / 1000
+        # return sum(variance) / len(self.agents)
+        # return sum(epsilons) / len(self.agents)
 
 
 class Agent:
-    def __init__(self, name):       # Each agent has alpha, beta, mean and variance for both theories
+    def __init__(self, name, theory):       # Each agent has alpha, beta, mean and variance for both theories
         self.name = name            # value my_theory tells which theory the agents thinks is better
-        self.alpha1 = np.random.uniform(1, 4)
-        self.beta1 = np.random.uniform(1, 4)
-        self.alpha2 = np.random.uniform(1, 4)
-        self.beta2 = np.random.uniform(1, 4)
-        self.mean1, self.var1 = beta.stats(self.alpha1, self.beta1, moments="mv")
-        self.mean2, self.var2 = beta.stats(self.alpha2, self.beta2, moments="mv")
+        if theory == 1:
+            self.alpha1 = np.random.uniform(1, 4)
+            self.beta1 = 1
+            self.alpha2 = 1
+            self.beta2 = np.random.uniform(1, 4)
+        elif theory == 2:
+            self.alpha1 = 1
+            self.beta1 = np.random.uniform(1, 4)
+            self.alpha2 = np.random.uniform(1, 4)
+            self.beta2 = 1
+        else:
+            self.alpha1 = np.random.uniform(1, 4)
+            self.beta1 = np.random.uniform(1, 4)
+            self.alpha2 = np.random.uniform(1, 4)
+            self.beta2 = np.random.uniform(1, 4)
+        self.mean1 = self.alpha1 / (self.alpha1 + self.beta1)
+        self.mean2 = self.alpha2 / (self.alpha2 + self.beta2)
+        self.var1 = (self.alpha1 * self.beta1) / ((self.alpha1 + self.beta1) ** 2 * (self.alpha1 + self.beta1 + 1))
+        self.var2 = (self.alpha2 * self.beta2) / ((self.alpha2 + self.beta2) ** 2 * (self.alpha2 + self.beta2 + 1))
+        # self.mean1, self.var1 = beta.stats(self.alpha1, self.beta1, moments="mv")
+        # self.mean2, self.var2 = beta.stats(self.alpha2, self.beta2, moments="mv")
         self.my_theory = self.mean1 > self.mean2  # so, True = theory1, False = theory2; theory1 is better by design
 
     def experiment(self, n, theory1, theory2):    # Agents take N pulls from the theory they support
@@ -126,8 +175,10 @@ class Agent:
             successes = np.random.binomial(n, theory2)
             self.alpha2 += successes
             self.beta2 += (n - successes)
-        self.mean1, self.var1 = beta.stats(self.alpha1, self.beta1, moments="mv")
-        self.mean2, self.var2 = beta.stats(self.alpha2, self.beta2, moments="mv")
+        self.mean1 = self.alpha1 / (self.alpha1 + self.beta1)
+        self.mean2 = self.alpha2 / (self.alpha2 + self.beta2)
+        self.var1 = (self.alpha1 * self.beta1) / ((self.alpha1 + self.beta1) ** 2 * (self.alpha1 + self.beta1 + 1))
+        self.var2 = (self.alpha2 * self.beta2) / ((self.alpha2 + self.beta2) ** 2 * (self.alpha2 + self.beta2 + 1))
 
     def update_theory(self):            # Updating value my_theory
         self.my_theory = self.mean1 > self.mean2
@@ -143,25 +194,107 @@ class Agent:
         self.beta2 = self.alpha2 * (1 / self.mean2 - 1)
 
     def doubt(self):   # Changing variance for "doubtful" agents
-        if self.my_theory:
-            new_sum1 = (self.alpha1 + self.beta1) / 2      # Agents half the sum of alpha and beta
-            self.alpha1 = self.mean1 * new_sum1             # mean stays the same
-            self.beta1 = (1 - self.mean1) * new_sum1
-        else:
-            new_sum2 = (self.alpha2 + self.beta2) / 2
-            self.alpha2 = self.mean2 * new_sum2
-            self.beta2 = (1 - self.mean2) * new_sum2
+        new_sum1 = (self.alpha1 + self.beta1) / 2    # Agents divides the sum of alpha and beta
+        self.alpha1 = self.mean1 * new_sum1             # mean stays the same
+        self.beta1 = (1 - self.mean1) * new_sum1
+
+        new_sum2 = (self.alpha2 + self.beta2) / 2
+        self.alpha2 = self.mean2 * new_sum2
+        self.beta2 = (1 - self.mean2) * new_sum2
+
+        self.var1 = (self.alpha1 * self.beta1) / ((self.alpha1 + self.beta1) ** 2 * (self.alpha1 + self.beta1 + 1))
+        self.var2 = (self.alpha2 * self.beta2) / ((self.alpha2 + self.beta2) ** 2 * (self.alpha2 + self.beta2 + 1))
+
 
     def doubt_alternative(self, nr_agreeing, n):       # Changing variance in a different way
-        if self.alpha1 > n and self.beta1 > n:
+        update = nr_agreeing * n
+        if (self.alpha1 + self.beta1) + update > 0:
             new_sum1 = (self.alpha1 + self.beta1) + nr_agreeing * n  # Agents add to the sum some number
             self.alpha1 = self.mean1 * new_sum1                      # this number depends on two things
             self.beta1 = (1 - self.mean1) * new_sum1                 # it is positive or negative depending on if ...
+        else:
+            new_sum1 = 1
+            self.alpha1 = self.mean1 * new_sum1
+            self.beta1 = (1 - self.mean1) * new_sum1
 
-        if self.alpha2 > n and self.beta2 > n:                       # ... more agents agree of disagree with them
-            new_sum2 = (self.alpha2 + self.beta2) + nr_agreeing * n  # its value also depends on N with is ...
-            self.alpha2 = self.mean2 * new_sum2                      # ... a parameter of the model
+        if (self.alpha2 + self.beta2) + update > 0:                       # ... more agents agree of disagree with them
+            new_sum2 = (self.alpha2 + self.beta2) + nr_agreeing * n     # its value also depends on N with is ...
+            self.alpha2 = self.mean2 * new_sum2                         # ... a parameter of the model
             self.beta2 = (1 - self.mean2) * new_sum2
+        else:
+            new_sum2 = 1
+            self.alpha2 = self.mean2 * new_sum2
+            self.beta2 = (1 - self.mean2) * new_sum2
+
+        self.var1 = (self.alpha1 * self.beta1) / ((self.alpha1 + self.beta1) ** 2 * (self.alpha1 + self.beta1 + 1))
+        self.var2 = (self.alpha2 * self.beta2) / ((self.alpha2 + self.beta2) ** 2 * (self.alpha2 + self.beta2 + 1))
+
+
+class Greedy(Agent):
+    def __init__(self, name, theory):
+        super().__init__(name, theory)
+        self.epsilon = 3
+
+    def experiment(self, n, theory1, theory2):
+        sum = self.alpha1 + self.beta1 + self.alpha2 + self.beta2
+        self.epsilon = round(log10(sum)) if sum > 1000 else 3
+
+        # for i in range(n):                                               # For each pull, there is a 1-epsilon chance
+        #     pulls2 += 1 if np.random.random() < (1 - self.epsilon) else 0  # that the agent will pull the other bandit
+        # pulls1 = n - pulls2                                        # pulls1 represent pulls from the preferred bandit
+
+        pulls = np.random.randint(0, self.epsilon, n)        # This is an alternative version of calculating 1 - epsilon
+        pulls2 = np.count_nonzero((pulls == self.epsilon - 1))
+        pulls1 = n - pulls2
+
+        if self.my_theory:
+            successes1, successes2 = np.random.binomial(pulls1, theory1), np.random.binomial(pulls2, theory2)
+            return successes1, (pulls1 - successes1), successes2, (pulls2 - successes2)
+
+        else:
+            successes1, successes2 = np.random.binomial(pulls2, theory1), np.random.binomial(pulls1, theory2)
+            return successes1, (pulls2 - successes1), successes2, (pulls1 - successes2)
+
+    def update(self, n, theory1, theory2):      # Updating alpha, beta, mean, variance for agents who do not share data
+        sum = self.alpha1 + self.beta1 if self.my_theory else self.alpha2 + self.beta2
+        self.epsilon = round(log10(sum)) if sum > 1000 else 3
+
+        pulls = np.random.randint(0, self.epsilon, n)        # This is an alternative version of calculating 1 - epsilon
+        pulls2 = pulls.tolist().count(self.epsilon - 1)
+        pulls1 = n - pulls2
+
+        if self.my_theory:
+            successes1 = np.random.binomial(pulls1, theory1)
+            successes2 = np.random.binomial(pulls2, theory2)
+            self.alpha1 += successes1
+            self.beta1 += (pulls1 - successes1)
+            self.alpha2 += successes2
+            self.beta2 += (pulls2 - successes2)
+        else:
+            successes1 = np.random.binomial(pulls2, theory1)
+            successes2 = np.random.binomial(pulls1, theory2)
+            self.alpha1 += successes1
+            self.beta1 += (pulls2 - successes1)
+            self.alpha2 += successes2
+            self.beta2 += (pulls1 - successes2)
+
+        self.mean1 = self.alpha1 / (self.alpha1 + self.beta1)
+        self.mean2 = self.alpha2 / (self.alpha2 + self.beta2)
+        self.var1 = (self.alpha1 * self.beta1) / ((self.alpha1 + self.beta1) ** 2 * (self.alpha1 + self.beta1 + 1))
+        self.var2 = (self.alpha2 * self.beta2) / ((self.alpha2 + self.beta2) ** 2 * (self.alpha2 + self.beta2 + 1))
+
+
+class Cautious(Agent):
+    def __init__(self, name, theory):
+        super().__init__(name, theory)
+
+    def update_theory(self):      # Updating value my_theory
+        if self.my_theory != (self.mean1 > self.mean2) and self.my_theory:
+            if (self.alpha2 + self.beta2) > 100000:
+                self.my_theory = False
+        elif self.my_theory != (self.mean1 > self.mean2) and not self.my_theory:
+            if (self.alpha1 + self.beta1) > 100000:
+                self.my_theory = True
 
 
 class Simulation:
@@ -170,16 +303,16 @@ class Simulation:
         self.rounds = rounds
         self.runs = runs
 
-    def run(self, rounds, type, data_sharing, nr_agents, pulls, theory1, theory2, interval, n):  # Initiates one run of the model
+    def run(self, rounds, type, data_sharing, nr_agents, pulls, theory1, theory2, interval, n, nr_good, kind):  # Initiates one run of the model
         result = list()
         round = Round()
-        result.append(round.create_agents(nr_agents))   # Collects results for the initial setup (before any action)
+        result.append(round.create_agents(nr_agents, nr_good, kind))   # Collects results for the initial setup (before any action)
 
         for i in range(rounds):           # Initiates one round of the model
             round.collect_data(theory1, theory2, pulls, data_sharing)   # For each round, agents collect data
             round.action(type, interval, n)                             # agents do their actions
-            result.append(round.results())                              # agents report results
-        return result       # returs results for one run of the model, as a list
+            result.append(round.results())                       # agents report results
+        return result       # returns results for one run of the model, as a list
 
     def add_results(self, result):
         if self.results is None:
@@ -201,9 +334,9 @@ def space(runs, rounds, parameters):   # Parameters must be a list of lists with
 
     for combination in combinations:            # Runs simulation for every combination of parameters
         simulation = Simulation(runs, rounds)
-        t, data_sharing, nr_agents, pulls, theory1, theory2, interval, n = combination
+        t, data_sharing, nr_agents, pulls, theory1, theory2, interval, n, nr_good, kind = combination
         for i in range(runs):
-            simulation.add_results(simulation.run(rounds, t, data_sharing, nr_agents, pulls, theory1, theory2, interval, n))
+            simulation.add_results(simulation.run(rounds, t, data_sharing, nr_agents, pulls, theory1, theory2, interval, n, nr_good, kind))
             if i % 100 == 0:
                 print(f"{combination}, run {i} of {runs}")
         results[combination] = simulation.results
