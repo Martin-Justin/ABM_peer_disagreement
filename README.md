@@ -150,7 +150,7 @@ $\epsilon$-greedy agents pull from the preferred bandit with $1 - \epsilon$ prob
 $$ 
 \epsilon = 
     \begin{cases}
-      \frac{1}{log_10(\alpha + \beta)}, & \text{if}\ \alpha + \beta > 1000 \\
+      \frac{1}{log_{10}(\alpha + \beta)}, & \text{if}\ \alpha + \beta > 1000 \\
       \frac{1}{3}, & \text{otherwise}
     \end{cases}
 $$
