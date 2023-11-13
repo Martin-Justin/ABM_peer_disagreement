@@ -151,7 +151,7 @@ $$
 \epsilon = 
     \begin{cases}
       \frac{1}{log_10(\alpha + \beta)}, & \text{if}\ \alpha + \beta > 1000 \\
-      3, & \text{otherwise}
+      \frac{1}{3}, & \text{otherwise}
     \end{cases}
 $$
 
