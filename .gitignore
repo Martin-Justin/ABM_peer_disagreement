@@ -156,4 +156,3 @@ cython_debug/
 /test_results/
 #/results.py
 /results/
-/reading_csv.py
