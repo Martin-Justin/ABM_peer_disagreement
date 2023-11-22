@@ -155,13 +155,13 @@ $$
     \end{cases}
 $$
 
-Since the sum of alphas and betas is always equal to the $number of agents \times number of pulls/round \times number of rounds$, $N$ can be represented as $number of agents \times number of pulls/round \times a$. This $a$ thus determines how exploratory are the agents; it is given as a parameter of the model.
+Since the sum of alphas and betas is always equal to the $number\ of\ agents \times number\ of\ pulls/round \times number\ of\ rounds$, $N$ can be represented as $number\ of\ agents \times number\ of\ pulls/round \times a$. This $a$ thus determines how exploratory are the agents; it is given as a parameter of the model.
 
 ### Rationally inert agents
 
-Anther norm of choosing which bandit to pull is called rational intertia. Here, agents who learn that the other bandit is better switch only when they become confident enough in this assessment. A version of this norm was first implemented by Frey and Šešelja (2020).
+Anther norm of choosing which bandit to pull is called rational inertia. Here, agents who learn that the other bandit is better switch only when they become confident enough in this assessment. A version of this norm was first implemented by Frey and Šešelja (2020).
 
-Specifically, agents make a switch only after the sum of their $\alpha$ and $\beta$ for the other bandit increases by $number of agents \times number of pulls/round \times a$ where $a$ is given as a parameter of the model. Since it can happen that no agents is working on a theory but some still want to swich, they will swithc after 50 rounds of persistently thinkinh that the other bandit is better, although they do not have sufficient evidence for this.
+Specifically, agents make a switch only after the sum of their $\alpha$ and $\beta$ for the other bandit increases by $number\ of\ agents \times number\ of\ pulls/round \times a$ where $a$ is given as a parameter of the model. Since it can happen that no agents is working on a theory but some still want to swich, they will swithc after 50 rounds of persistently thinkinh that the other bandit is better, although they do not have sufficient evidence for this.
 
 ## Running the model
 
