@@ -150,10 +150,18 @@ $\epsilon$-greedy agents pull from the preferred bandit with $1 - \epsilon$ prob
 $$ 
 \epsilon = 
     \begin{cases}
-      \frac{1}{log_{10}(\alpha + \beta)}, & \text{if}\ \alpha + \beta > 1000 \\
+      \frac{N}{\alpha + \beta}, & \text{if}\ \alpha + \beta > \frac{N}{0.3} \\
       \frac{1}{3}, & \text{otherwise}
     \end{cases}
 $$
+
+Since the sum of alphas and betas is always equal to the $number of agents \times number of pulls/round \times number of rounds$, $N$ can be represented as $number of agents \times number of pulls/round \times a$. This $a$ thus determines how exploratory are the agents; it is given as a parameter of the model.
+
+### Rationally inert agents
+
+Anther norm of choosing which bandit to pull is called rational intertia. Here, agents who learn that the other bandit is better switch only when they become confident enough in this assessment. A version of this norm was first implemented by Frey and Šešelja (2020).
+
+Specifically, agents make a switch only after the sum of their $\alpha$ and $\beta$ for the other bandit increases by $number of agents \times number of pulls/round \times a$ where $a$ is given as a parameter of the model. Since it can happen that no agents is working on a theory but some still want to swich, they will swithc after 50 rounds of persistently thinkinh that the other bandit is better, although they do not have sufficient evidence for this.
 
 ## Running the model
 
@@ -168,6 +176,9 @@ The model is run using the function `space(runs, rounds, parameters)`. Argument 
 8. N, 
 9. number of agents working on the better theory at the beginning of the simulation
 10. how are agents choosing the bandit
+11. agents' priors
+12. epsions
+13. jump threshold
 
 Possible values are:
 
@@ -181,7 +192,12 @@ t2 = float    # between 0 and 1
 distance = float    # between 0 and 1
 N = int
 nr_good_agents = int    # between 0 and nr_agents
-choosing = ["Normal", "Greedy"]
+choosing = ["Normal", "Greedy", "Cautious", "Mixed"]
+priors = int
+epsilon = (bool, float or int)   # first value determines whether the epsilons change, second value determins the epsilon
+                                 # it should be a float between 0 and 0.5 if epsilon is stable or an int != 0 if epsilons changes
+jump_threshold = int 
+
 ```
 
 Right now, this function returns a dictionary. Each set-up of the simulation is represented by one item: key is a list of the used parameters and the value is a 2d array where each row represents the results of one run of the set-up. The function `write_file(data, path, name, rounds)` takes this dictionary as an argument and saves the data as a .csv file.
