@@ -242,7 +242,7 @@ class Greedy(Agent):
 
     def experiment(self, pulls, theory1, theory2, nr_agents):
         sum = self.alpha1 + self.beta1 + self.alpha2 + self.alpha1
-        factor = nr_agents * pulls * self.epsilon
+        factor = nr_agents * pulls * self.epsilon_value
 
         if self.epsilon_type:
             self.epsilon = factor / sum if sum > (factor / 0.3) else float(1/3)
