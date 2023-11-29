@@ -183,20 +183,21 @@ The model is run using the function `space(runs, rounds, parameters)`. Argument 
 Possible values are:
 
 ```python
+# All parameters should be given as list of values
 type = ["Conciliate", "Steadfast", "Doubt_halving", "Doubt", "Boost", "Conciliate_degree"]
 data_sharing = [True, False]
-nr_agents = int
-pulls = int
-t1 = float    # between 0 and 1
-t2 = float    # between 0 and 1
-distance = float    # between 0 and 1
-N = int
-nr_good_agents = int    # between 0 and nr_agents
+nr_agents = list(int)
+pulls = list(int)
+t1 = list(float)    # between 0 and 1
+t2 = list(float)    # between 0 and 1
+distance = list(float)    # between 0 and 1
+N = list(int)
+nr_good_agents = list(int)    # between 0 and nr_agents
 choosing = ["Normal", "Greedy", "Cautious", "Mixed"]
-priors = int
-epsilon = (bool, float or int)   # first value determines whether the epsilons change, second value determines the epsilon
+priors = list(int)
+epsilon = list((bool, float or int))   # first value determines whether the epsilons change, second value determines the epsilon
                                  # it should be a float between 0 and 0.5 if epsilon is stable or an int != 0 if epsilons changes
-jump_threshold = int 
+jump_threshold = list(int) 
 
 ```
 

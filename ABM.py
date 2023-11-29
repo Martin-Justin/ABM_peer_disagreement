@@ -113,15 +113,17 @@ class Round:
         self.round_results_convergence = list()   # ... the number of agents who support theory1 vs theory2
         # variance = list()
         # sums = list()
+        distance = list()
         # epsilons = list()
         for agent in self.agents:
             self.round_results_convergence.append(agent.my_theory)
+            # distance.append(abs(agent.mean1 - agent.mean2))
             # epsilons.append(agent.epsilon)
-            # sums.append(agent.alpha1 + agent.beta1)
+            # sums.append(agent.alpha1 + agent.beta1 + agent.alpha2 + agent.alpha2)
             # variance.append(agent.var1)
         # return self.round_results
         return self.round_results_convergence.count(True) / len(self.agents)
-        # return (sum(sums) / len(self.agents)) / 1000
+        # return sum(distance) / len(self.agents)
         # return sum(variance) / len(self.agents)
         # return sum(epsilons) / len(self.agents)
 
@@ -234,6 +236,33 @@ class Agent:
         self.var2 = (self.alpha2 * self.beta2) / ((self.alpha2 + self.beta2) ** 2 * (self.alpha2 + self.beta2 + 1))
 
 
+    def doubt_alternative_alternative(self, nr_agreeing, n):
+        update = nr_agreeing * n
+        if self.my_theory:
+            if (self.alpha1 + self.beta1) + update > 0:
+                new_sum1 = (self.alpha1 + self.beta1) + nr_agreeing * n  # Agents add to the sum some number
+                self.alpha1 = self.mean1 * new_sum1  # this number depends on two things
+                self.beta1 = (1 - self.mean1) * new_sum1  # it is positive or negative depending on if ...
+            else:
+                new_sum1 = 1
+                self.alpha1 = self.mean1 * new_sum1
+                self.beta1 = (1 - self.mean1) * new_sum1
+
+        if not self.my_theory:
+            if (self.alpha2 + self.beta2) + update > 0:  # ... more agents agree of disagree with them
+                new_sum2 = (self.alpha2 + self.beta2) + nr_agreeing * n  # its value also depends on N with is ...
+                self.alpha2 = self.mean2 * new_sum2  # ... a parameter of the model
+                self.beta2 = (1 - self.mean2) * new_sum2
+            else:
+                new_sum2 = 1
+                self.alpha2 = self.mean2 * new_sum2
+                self.beta2 = (1 - self.mean2) * new_sum2
+
+        self.var1 = (self.alpha1 * self.beta1) / ((self.alpha1 + self.beta1) ** 2 * (self.alpha1 + self.beta1 + 1))
+        self.var2 = (self.alpha2 * self.beta2) / ((self.alpha2 + self.beta2) ** 2 * (self.alpha2 + self.beta2 + 1))
+
+
+
 class Greedy(Agent):
     def __init__(self, name, theory, prior, epsilon, threshold):
         super().__init__(name, theory, prior, epsilon, threshold)
@@ -310,40 +339,40 @@ class Cautious(Agent):
     def update_theory(self, pulls, nr_agents):      # Updating value my_theory
         factor = nr_agents * pulls * self.threshold
 
-        if self.my_theory == (self.mean1 > self.mean2):   # Switching based on confidence, but only looking at the other theory
-            self.switch_point = 0
-            self.counter = 0
-
-        if self.my_theory != (self.mean1 > self.mean2) and not self.switch_point:
-            if self.my_theory:
-                self.switch_point = self.alpha2 + self.beta2
-            else:
-                self.switch_point = self.alpha1 + self.beta1
-
-        if self.my_theory != (self.mean1 > self.mean2) and self.switch_point:
-            if self.my_theory:
-                if (self.alpha2 + self.beta2) > (self.switch_point + factor) or self.counter >= 50:
-                    self.my_theory = False
-                    self.switch_point = 0
-                    self.counter = 0
-                else:
-                    self.counter += 1
-            else:
-                if (self.alpha1 + self.beta1) > (self.switch_point + factor) or self.counter >= 50:
-                    self.my_theory = True
-                    self.switch_point = 0
-                    self.counter = 0
-                else:
-                    self.counter += 1
-
-        # if self.my_theory == (self.mean1 > self.mean2):        # Switching based on rounds
+        # if self.my_theory == (self.mean1 > self.mean2):   # Switching based on confidence, but only looking at the other theory
+        #     self.switch_point = 0
         #     self.counter = 0
         #
-        # if self.my_theory != (self.mean1 > self.mean2) and self.counter < 20:
-        #     self.counter += 1
-        # elif self.my_theory != (self.mean1 > self.mean2) and self.counter >= 20:
-        #     self.my_theory = self.mean1 > self.mean2
-        #     self.counter = 0
+        # if self.my_theory != (self.mean1 > self.mean2) and not self.switch_point:
+        #     if self.my_theory:
+        #         self.switch_point = self.alpha2 + self.beta2
+        #     else:
+        #         self.switch_point = self.alpha1 + self.beta1
+        #
+        # if self.my_theory != (self.mean1 > self.mean2) and self.switch_point:
+        #     if self.my_theory:
+        #         if (self.alpha2 + self.beta2) > (self.switch_point + factor) or self.counter >= 50:
+        #             self.my_theory = False
+        #             self.switch_point = 0
+        #             self.counter = 0
+        #         else:
+        #             self.counter += 1
+        #     else:
+        #         if (self.alpha1 + self.beta1) > (self.switch_point + factor) or self.counter >= 50:
+        #             self.my_theory = True
+        #             self.switch_point = 0
+        #             self.counter = 0
+        #         else:
+        #             self.counter += 1
+
+        if self.my_theory == (self.mean1 > self.mean2):        # Switching based on rounds
+            self.counter = 0
+
+        if self.my_theory != (self.mean1 > self.mean2) and self.counter < self.threshold:
+            self.counter += 1
+        elif self.my_theory != (self.mean1 > self.mean2) and self.counter >= self.threshold:
+            self.my_theory = self.mean1 > self.mean2
+            self.counter = 0
 
         # if self.my_theory == (self.mean1 > self.mean2):   # Switching based on confidence, but looking at both theories
         #     self.switch_point = tuple()
@@ -393,33 +422,42 @@ class Combined(Agent):
             return successes1, (pulls2 - successes1), successes2, (pulls1 - successes2)
 
     def update_theory(self, pulls, nr_agents):
-        factor = nr_agents * pulls * self.threshold
-
-        if self.my_theory == (self.mean1 > self.mean2):   # Switching based on confidence, but only looking at the other theory
-            self.switch_point = 0
+        if self.my_theory == (self.mean1 > self.mean2):        # Switching based on rounds
             self.counter = 0
 
-        if self.my_theory != (self.mean1 > self.mean2) and not self.switch_point:
-            if self.my_theory:
-                self.switch_point = self.alpha2 + self.beta2
-            else:
-                self.switch_point = self.alpha1 + self.beta1
+        if self.my_theory != (self.mean1 > self.mean2) and self.counter < self.threshold:
+            self.counter += 1
+        elif self.my_theory != (self.mean1 > self.mean2) and self.counter >= self.threshold:
+            self.my_theory = self.mean1 > self.mean2
+            self.counter = 0
 
-        if self.my_theory != (self.mean1 > self.mean2) and self.switch_point:
-            if self.my_theory:
-                if (self.alpha2 + self.beta2) > (self.switch_point + factor) or self.counter >= 50:
-                    self.my_theory = False
-                    self.switch_point = 0
-                    self.counter = 0
-                else:
-                    self.counter += 1
-            else:
-                if (self.alpha1 + self.beta1) > (self.switch_point + factor) or self.counter >= 50:
-                    self.my_theory = True
-                    self.switch_point = 0
-                    self.counter = 0
-                else:
-                    self.counter += 1
+        # factor = nr_agents * pulls * self.threshold
+        #
+        # if self.my_theory == (self.mean1 > self.mean2):   # Switching based on confidence, but only looking at the other theory
+        #     self.switch_point = 0
+        #     self.counter = 0
+        #
+        # if self.my_theory != (self.mean1 > self.mean2) and not self.switch_point:
+        #     if self.my_theory:
+        #         self.switch_point = self.alpha2 + self.beta2
+        #     else:
+        #         self.switch_point = self.alpha1 + self.beta1
+        #
+        # if self.my_theory != (self.mean1 > self.mean2) and self.switch_point:
+        #     if self.my_theory:
+        #         if (self.alpha2 + self.beta2) > (self.switch_point + factor) or self.counter >= 50:
+        #             self.my_theory = False
+        #             self.switch_point = 0
+        #             self.counter = 0
+        #         else:
+        #             self.counter += 1
+        #     else:
+        #         if (self.alpha1 + self.beta1) > (self.switch_point + factor) or self.counter >= 50:
+        #             self.my_theory = True
+        #             self.switch_point = 0
+        #             self.counter = 0
+        #         else:
+        #             self.counter += 1
 
 
 class Simulation:

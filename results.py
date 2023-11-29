@@ -6,7 +6,7 @@ import numpy as np
 
 def write_file(data, path, name, rounds):
     with open(path+name, "w", newline="") as file:
-        writer = csv.writer(file, dialect="excel")
+        writer = csv.writer(file, dialect="excel-tab")
         r = [i for i in range(rounds+1)]
         for metadata, dat in data.items():
             writer.writerow(metadata)
@@ -17,7 +17,7 @@ def write_file(data, path, name, rounds):
 
 def write_file_gist(data, path, name, rounds, runs):
     with open(path+name, "w", newline="") as file:
-        writer = csv.writer(file, dialect="excel")
+        writer = csv.writer(file, dialect="excel-tab")
         for metadata, dat in data.items():
             writer.writerow(metadata)
             data_point = [np.count_nonzero(dat[:, rounds] == 1) / runs]
@@ -28,7 +28,7 @@ def write_file_gist(data, path, name, rounds, runs):
 
 def write_file_average_run(data, path, name, rounds, runs):
     with open(path+name, "w", newline="") as file:
-        writer = csv.writer(file, dialect="excel")
+        writer = csv.writer(file, dialect="excel-tab")
         r = [i for i in range(rounds + 1)]
 
         for metadata, dat in data.items():
@@ -49,8 +49,8 @@ def plot_from_data(data, rounds, runs, path, name):
         for i in range(0, rounds + 1):
             epsilon = np.sum((result[:, i]) / runs)
             y.append(epsilon)
-        plt.plot(x, y, label=t)
-        # plt.ylim(0, 1)
+        plt.plot(x, y, label=t[0])
+        plt.ylim(0, 0.01)
     plt.xlabel("rounds")
     plt.ylabel("results")
     plt.title(name[:-4])
@@ -101,15 +101,16 @@ def alt_plot_polarization(data, rounds, runs, path, name):
 pulls = 1000
 n = pulls / 2
 rounds = 10000
-runs = 10000
-path = "results/basicsetup/2"
+runs = 1000
+path = "results/conference_priors/"
 
-for agents in range(10, 11):
-    parameters = [["Conciliate", "Steadfast", "Doubt", "Boost", "Mixed"], [True], [agents], [pulls], [0.501], [0.5], [None], [n], [None], ["Normal"], [4], [(True, 10)], [5]]
+for t in ["Normal", "Greedy", "Cautious"]:
+    parameters = [["Conciliate", "Steadfast", "Doubt", "Boost", "Mixed"], [True], [10], [pulls], [0.501], [0.5], [None], [n], [None], [t], [250], [(False, 0.2)], [10]]
     d = abm.space(runs, rounds, parameters)
-    write_file_average_run(d, path, f"{agents}_{pulls}_{n}_basic_setup_all_average.csv", rounds, runs)
-    write_file_gist(d, path, f"{agents}_{pulls}_{n}_basic_setup_all_gist.csv", rounds, runs)
-    alt_plot(d, rounds, runs, path, f"{agents}_{pulls}_{n}_basic_setup_all.png")
+    write_file(d, path, f"{t}_10_{pulls}_{n}_all_prior_250.csv", rounds)
+    write_file_average_run(d, path, f"{t}_10_{pulls}_{n}_all_prior_250_average.csv", rounds, runs)
+    write_file_gist(d, path, f"{t}_10_{pulls}_{n}_all_prior_250_gist.csv", rounds, runs)
+    alt_plot(d, rounds, runs, path, f"{t}_10_{pulls}_{n}_all_prior_250.png")
 
 # n = 2000
 # for agents in range(10, 11):
@@ -121,12 +122,13 @@ for agents in range(10, 11):
 
 # n = pulls / 2
 # for agents in range(10, 11):
-#     for nr_good in range(3, 4):
+#     for nr_good in range(5, 6):
 #         parameters = [["Conciliate", "Steadfast", "Doubt", "Boost", "Mixed"], [True], [agents], [pulls], [0.501], [0.5], [None], [n], [nr_good], ["Normal"], [4], [(True, 10)], [5]]
 #         d = abm.space(runs, rounds, parameters)
-#         write_file_average_run(d, path, f"{agents}_{pulls}_{n}_basic_with_{nr_good}_good_average.csv", rounds, runs)
-#         write_file_gist(d, path, f"{agents}_{pulls}_{n}_basic_setup_with_{nr_good}_good_gist.csv", rounds, runs)
-#         alt_plot(d, rounds, runs, path, f"{agents}_{pulls}_{n}_basic_setup_with_{nr_good}_good.png")
+#         # write_file_average_run(d, path, f"{agents}_{pulls}_{n}_basic_with_{nr_good}_good_average.csv", rounds, runs)
+#         # write_file_gist(d, path, f"{agents}_{pulls}_{n}_basic_setup_with_{nr_good}_good_gist.csv", rounds, runs)
+#         write_file(d, path, f"{agents}_{pulls}_{n}_basic_setup_with_{nr_good}_good3.csv", rounds)
+#         alt_plot(d, rounds, runs, path, f"{agents}_{pulls}_{n}_basic_setup_with_{nr_good}_good3.png")
 
 # for agents in range(10, 11):
 #     for priors in [3000]:
