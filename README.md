@@ -2,7 +2,7 @@
 
 Documentation for a modification of an agent based model first introduced to philosophy of science by Kevin Zollman ([2007](https://www.cambridge.org/core/journals/philosophy-of-science/article/communication-structure-of-epistemic-communities/B1A3770084C04C26A3533626E7AABBFD), [2010](https://link.springer.com/article/10.1007/s10670-009-9194-6)).
 
-This is very much still work in progress. The development of this model is part of my masters’ thesis project at Faculty of Arts, University of Ljubljana (supervised by Olga Markič and Borut Trpin), in collaboration with Dunja Šešelja and Christian Straßer form the Reasoning, Rationality and Science group at RUB.
+This is very much still work in progress. The development of this model is part of my masters’ thesis project at Faculty of Arts, University of Ljubljana (supervised by Olga Markič, Borut Trpin, and Dunja Šešelja (RUB)), in collaboration with Christian Straßer form the Reasoning, Rationality and Science group at RUB.
 
 ## Basics
 
@@ -47,7 +47,7 @@ In the model, agents who act in accordance with this norm average their assessme
  
 
 $$
-C_{avg} = \frac{\sum_{i=1}^{n} C_i+C_{i+1}+...+C_n}{n},
+C_{avg} = \frac{\sum_{i=1}^{n} C_i}{n},
 $$
 
 where ***n*** is the number of agents. 

@@ -2,6 +2,10 @@ import matplotlib.pyplot as plt
 import ABM as abm
 import csv
 import numpy as np
+import scienceplots
+
+plt.style.use('science')
+plt.rcParams.update({'font.size': 8})
 
 
 def write_file(data, path, name, rounds):
@@ -15,16 +19,26 @@ def write_file(data, path, name, rounds):
             writer.writerow("\n")
 
 
+def write_file_data(data, path, name):
+    with (open(path+name, "w", newline="") as file):
+        writer = csv.writer(file, dialect="excel-tab")
+        for metadata, dat in data.items():
+            results, errors = dat
+            writer.writerow(metadata)
+            writer.writerow(results)
+            writer.writerow(errors)
+            writer.writerow("\n")
+
+
 def write_file_gist(data, path, name, rounds, runs):
     with open(path+name, "w", newline="") as file:
         writer = csv.writer(file, dialect="excel-tab")
         for metadata, dat in data.items():
             writer.writerow(metadata)
-            data_point = [np.count_nonzero(dat[:, rounds] == 1) / runs]
+            data_point = [np.count_nonzero(dat[:, rounds] == 1) / runs, 1.96 * np.std(dat[:, rounds]) / np.sqrt(runs)]
             # data_point = [np.sum((dat[:, rounds]) / runs)]
             writer.writerow(data_point)
             writer.writerow("\n")
-
 
 def write_file_average_run(data, path, name, rounds, runs):
     with open(path+name, "w", newline="") as file:
@@ -96,82 +110,85 @@ def alt_plot_polarization(data, rounds, runs, path, name):
     plt.savefig(path + name)
     plt.clf()
 
-# Parameters should be given in the format: type, data sharing, nr_agents, pulls, t1, t2, distance, N
+
+def plot_confidence(data, rounds, runs, path, name):
+    x = [i for i in range(rounds + 1)]
+    for t, result in data.items():
+        y, ymin, ymax = list(), list(), list()
+        for i in range(0, rounds + 1):
+            l = result[:, i].tolist()
+            mean = l.count(1) / runs
+            y.append(mean)
+            # ci = 1.96 * np.std(l)/np.sqrt(runs)
+            ymin.append(mean - 1.96 * np.sqrt(mean * (1 - mean) / runs))
+            ymax.append(mean + 1.96 * np.sqrt(mean * (1 - mean) / runs))
+        plt.style.use('science')
+        plt.plot(x, y, label=t[0])
+        plt.fill_between(x, ymin, ymax, alpha=.3)
+    plt.xlabel("rounds")
+    plt.ylabel("convergence")
+    plt.title(name[:-4])
+    plt.legend()
+    plt.savefig(path + name, dpi=250)
+    plt.clf()
+
+
+def plot_errorbars(x_axis, data, path, name, xl, ticks):
+    for t, d in data.items():
+        results, errors = d
+        plt.errorbar(x_axis, results, yerr=errors, fmt=".-", label=t, capsize=3)
+        plt.ylim(0, 1.05)
+    if ticks:
+        plt.xticks(x_axis)
+    plt.xlabel(xl)
+    plt.ylabel("Convergence")
+    plt.title(name[:-4])
+    plt.legend(loc="lower right", fontsize="small")
+    plt.savefig(path + name, dpi=250)
+    plt.clf()
+
+
+def end_convergence(data, rounds, runs):
+    for metadata, dat in data.items():
+        return np.count_nonzero(dat[:, rounds] == 1) / runs
+
+
+# def error(data, rounds, runs):
+#     for metadata, dat in data.items():
+#         return 1.96 * np.std(dat[:, rounds]) / np.sqrt(runs)
+
+def error(data, rounds, runs):
+    for metadata, dat in data.items():
+        mean = np.count_nonzero(dat[:, rounds] == 1) / runs
+        return 1.96 * np.sqrt(mean * (1 - mean) / runs)
+
+
+# Parameters should be given in the format: type, data sharing, nr_agents, pulls, t1, t2, distance, N, nr_good, kind, prior, epsilon, threshold
+# Example run below
 
 pulls = 1000
+t1 = 0.501
+t2 = 0.5
 n = pulls / 2
 rounds = 10000
 runs = 1000
-path = "results/conference_priors/"
 
-for t in ["Normal", "Greedy", "Cautious"]:
-    parameters = [["Conciliate", "Steadfast", "Doubt", "Boost", "Mixed"], [True], [10], [pulls], [0.501], [0.5], [None], [n], [None], [t], [250], [(False, 0.2)], [10]]
-    d = abm.space(runs, rounds, parameters)
-    write_file(d, path, f"{t}_10_{pulls}_{n}_all_prior_250.csv", rounds)
-    write_file_average_run(d, path, f"{t}_10_{pulls}_{n}_all_prior_250_average.csv", rounds, runs)
-    write_file_gist(d, path, f"{t}_10_{pulls}_{n}_all_prior_250_gist.csv", rounds, runs)
-    alt_plot(d, rounds, runs, path, f"{t}_10_{pulls}_{n}_all_prior_250.png")
+path = "final_results/rational_intertia/new-algorithm/"
+data = dict()
+for tip in ["Doubt"]:
+    data[tip] = list()
+    results = list()
+    errors = list()
+    agents = 10
+    for threshold in [20, 30, 40, 50, 60, 70, 80]:
+        parameters = [[tip], [True], [agents], [pulls], [t1], [t2], [None], [500], [None], ["Cautious"], [250], [(False, 0.005)], [threshold]]
+        d = abm.space(runs, rounds, parameters)
+        write_file(d, path, f"{tip}, {agents}, {threshold}, new algorithm.csv", rounds)
+        plot_confidence(d, rounds, runs, path, f"{tip}, {agents}, {threshold}, new algorithm.png")
+        results.append(end_convergence(d, rounds, runs))
+        errors.append(error(d, rounds, runs))
+    data[tip].append(results)
+    data[tip].append(errors)
+write_file_data(data, path, f"Inertia, doubt, new algorithm.csv")
+plot_errorbars([20, 30, 40, 50, 60, 70, 80], data, path, f"Inertia, doubt, new algorithm.png", "Threshold", True)
 
-# n = 2000
-# for agents in range(10, 11):
-#     parameters = [["Steadfast", "Doubt", "Boost", "Mixed"], [True], [agents], [pulls], [0.501], [0.5], [None], [n], [None], ["Normal"], [4], [(True, 10)], [5]]
-#     d = abm.space(runs, rounds, parameters)
-#     write_file_average_run(d, path, f"{agents}_{pulls}_{n}_basic_extraboost_average.csv", rounds, runs)
-#     write_file_gist(d, path, f"{agents}_{pulls}_{n}_basic_extraboost_gist.csv", rounds, runs)
-#     alt_plot(d, rounds, runs, path, f"{agents}_{pulls}_{n}_basic_extraboost.png")
-
-# n = pulls / 2
-# for agents in range(10, 11):
-#     for nr_good in range(5, 6):
-#         parameters = [["Conciliate", "Steadfast", "Doubt", "Boost", "Mixed"], [True], [agents], [pulls], [0.501], [0.5], [None], [n], [nr_good], ["Normal"], [4], [(True, 10)], [5]]
-#         d = abm.space(runs, rounds, parameters)
-#         # write_file_average_run(d, path, f"{agents}_{pulls}_{n}_basic_with_{nr_good}_good_average.csv", rounds, runs)
-#         # write_file_gist(d, path, f"{agents}_{pulls}_{n}_basic_setup_with_{nr_good}_good_gist.csv", rounds, runs)
-#         write_file(d, path, f"{agents}_{pulls}_{n}_basic_setup_with_{nr_good}_good3.csv", rounds)
-#         alt_plot(d, rounds, runs, path, f"{agents}_{pulls}_{n}_basic_setup_with_{nr_good}_good3.png")
-
-# for agents in range(10, 11):
-#     for priors in [3000]:
-#         parameters = [["Conciliate", "Steadfast", "Doubt", "Boost", "Mixed"], [True], [agents], [pulls], [0.501], [0.5], [None], [n], [None], ["Normal"], [priors], [(True, 10)], [5]]
-#         d = abm.space(runs, rounds, parameters)
-#         write_file_average_run(d, path, f"{agents}_{pulls}_{n}_basic_prior{priors}_average.csv", rounds, runs)
-#         write_file_gist(d, path, f"{agents}_{pulls}_{n}_basic_prior{priors}_gist.csv", rounds, runs)
-#         alt_plot(d, rounds, runs, path, f"{agents}_{pulls}_{n}_basic_prior{priors}.png")
-
-# for agents in range(10, 11):
-#     parameters = [["Conciliate", "Steadfast", "Doubt", "Boost", "Mixed"], [True], [agents], [pulls], [0.501], [0.5], [None], [n], [None], ["Greedy"], [4], [(False, 0.2)], [5]]
-#     d = abm.space(runs, rounds, parameters)
-#     write_file_average_run(d, path, f"{agents}_{pulls}_{n}_greedy_stable_all_average.csv", rounds, runs)
-#     write_file_gist(d, path, f"{agents}_{pulls}_{n}_greedy_stable_all_gist.csv", rounds, runs)
-#     alt_plot(d, rounds, runs, path, f"{agents}_{pulls}_{n}_greedy_stable_all.png")
-
-# for agents in range(10, 11):
-#     parameters = [["Conciliate", "Steadfast", "Doubt", "Boost", "Mixed"], [True], [agents], [pulls], [0.501], [0.5], [None], [n], [None], ["Greedy"], [4], [(True, 10)], [5]]
-#     d = abm.space(runs, rounds, parameters)
-#     write_file_average_run(d, path, f"{agents}_{pulls}_{n}_greedy_changing_all_average.csv", rounds, runs)
-#     write_file_gist(d, path, f"{agents}_{pulls}_{n}_greedy_changing_all_gist.csv", rounds, runs)
-#     alt_plot(d, rounds, runs, path, f"{agents}_{pulls}_{n}_greedy_changing_all.png")
-
-# for agents in range(10, 11):
-#     parameters = [["Conciliate", "Steadfast", "Doubt", "Boost", "Mixed"], [True], [agents], [pulls], [0.501], [0.5], [None], [n], [None], ["Greedy"], [4], [(True, 1)], [5]]
-#     d = abm.space(runs, rounds, parameters)
-#     write_file_average_run(d, path, f"{agents}_{pulls}_{n}_greedy_changing_smallE_average.csv", rounds, runs)
-#     write_file_gist(d, path, f"{agents}_{pulls}_{n}_greedy_changing_smallE_gist.csv", rounds, runs)
-#     alt_plot(d, rounds, runs, path, f"{agents}_{pulls}_{n}_greedy_changing_smallE.png")
-
-# for agents in range(10, 11):
-#     parameters = [["Conciliate", "Steadfast", "Doubt", "Boost", "Mixed"], [True], [agents], [pulls], [0.501], [0.5], [None], [n], [None], ["Cautious"], [4], [(True, 1)], [5]]
-#     d = abm.space(runs, rounds, parameters)
-#     write_file_average_run(d, path, f"{agents}_{pulls}_{n}_cautious_all_average.csv", rounds, runs)
-#     write_file_gist(d, path, f"{agents}_{pulls}_{n}_cautious_all_gist.csv", rounds, runs)
-#     alt_plot(d, rounds, runs, path, f"{agents}_{pulls}_{n}_cautious_all.png")
-
-# for agents in range(10, 11):
-#     parameters = [["Conciliate", "Steadfast", "Doubt", "Boost", "Mixed"], [True], [agents], [pulls], [0.501], [0.5], [None], [n], [None], ["Combined"], [4], [(True, 10)], [5]]
-#     d = abm.space(runs, rounds, parameters)
-#     write_file_average_run(d, path, f"{agents}_{pulls}_{n}_combined_all_average.csv", rounds, runs)
-#     write_file_gist(d, path, f"{agents}_{pulls}_{n}_combined_all_gist.csv", rounds, runs)
-#     alt_plot(d, rounds, runs, path, f"{agents}_{pulls}_{n}_combined_all.png")
-
-
-# ["Conciliate", "Steadfast", "Doubt", "Boost", "Doubt_halving"]
