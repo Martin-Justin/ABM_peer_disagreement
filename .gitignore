@@ -154,6 +154,7 @@ cython_debug/
 /beta-test.py
 /with-data-sharing.py
 /test_results/
-#/results.py
+/results.py
 /results/
 /final_results/
+test.py

@@ -44,7 +44,7 @@ class Round:
             for agent in self.agents:                            # -- every agent does its own experiments ...
                 agent.update(pulls, theory1, theory2, nr_agents)            # -- ... and updates only based on them
 
-    def action(self, type, interval, n, pulls, nr_agents):    # Defines different ways in which agents can act every round
+    def action(self, type, interval, n, pulls, nr_agents, constraint):    # Defines different ways in which agents can act every round
         if type == "Conciliate":     # Here, agents split the difference
             agg1 = sum([agent.mean1 for agent in self.agents]) / len(self.agents)   # The function calculate the average ...
             agg2 = sum([agent.mean2 for agent in self.agents]) / len(self.agents)   # ... of their credence for both theories
@@ -69,6 +69,39 @@ class Round:
                     if agent.name != agent2.name:     # Each agent count the number of agents who (dis)agree with them
                         n0 -= 1 if agent.my_theory != agent2.my_theory else 0
                 agent.doubt_alternative(n0, n)         # they recalculate the agents variance
+
+        if type == "Doubt_distance_linear":         # Here, agents change their variance in a different way
+            for agent in self.agents:
+                agent.update_theory(pulls, nr_agents)
+                distances1, distances2 = 0, 0
+                for agent2 in self.agents:
+                    if agent.name != agent2.name:
+                        distances1 += abs(agent.mean1 - agent2.mean1)
+                        distances2 += abs(agent.mean2 - agent2.mean2)
+                agent.doubt_distance_linear(distances1, distances2, n)
+
+        if type == "Doubt_distance_sigmoid":
+            for agent in self.agents:
+                agent.update_theory(pulls, nr_agents)
+                for agent2 in self.agents:
+                    if agent.name != agent2.name:
+                        distance1 = abs(agent.mean1 - agent2.mean1)
+                        distance2 = abs(agent.mean2 - agent2.mean2)
+                        agent.doubt_distance_sigmoid(distance1, distance2, n)
+
+        if type == "Doubt_fancy":
+            for agent in self.agents:
+                agent.update_theory(pulls, nr_agents)
+                most_distant1 = 0
+                most_distant2 = 0
+                for agent2 in self.agents:
+                    if agent.name != agent2.name:
+                        if abs(agent.mean1 - agent2.mean1) > abs(agent.mean1 - most_distant1) or most_distant1 == 0:
+                            most_distant1 = agent2.mean1
+                        if abs(agent.mean2 - agent2.mean2) > abs(agent.mean2 - most_distant2) or most_distant2 == 0:
+                            most_distant2 = agent2.mean2
+                agent.doubt_fancy(most_distant1, most_distant2, constraint)
+
 
         if type == "Mixed":
             for agent in self.agents:
@@ -95,10 +128,10 @@ class Round:
                 interesting_credences1 = list()
                 interesting_credences2 = list()
                 for credence1 in credences1:
-                    if abs(agent.mean1 - credence1) < interval:      # The agents check if the credence of an agent ...
+                    if abs(agent.mean1 - credence1) <= interval:      # The agents check if the credence of an agent ...
                         interesting_credences1.append(credence1)     # ... is within the interval and collect it ...
                 for credence2 in credences2:                         # ... if it is
-                    if abs(agent.mean2 - credence2) < interval:
+                    if abs(agent.mean2 - credence2) <= interval:
                         interesting_credences2.append(credence2)
                 agg1 = sum(interesting_credences1) / len(interesting_credences1)
                 agg2 = sum(interesting_credences2) / len(interesting_credences2)
@@ -229,6 +262,75 @@ class Agent:
             self.beta2 = (1 - self.mean2) * new_sum2
         else:
             new_sum2 = 1
+            self.alpha2 = self.mean2 * new_sum2
+            self.beta2 = (1 - self.mean2) * new_sum2
+
+        self.var1 = (self.alpha1 * self.beta1) / ((self.alpha1 + self.beta1) ** 2 * (self.alpha1 + self.beta1 + 1))
+        self.var2 = (self.alpha2 * self.beta2) / ((self.alpha2 + self.beta2) ** 2 * (self.alpha2 + self.beta2 + 1))
+
+    def doubt_distance_linear(self, distance1, distance2, n):
+        update1 = distance1 * n        # Changing variance in a different way
+        if (self.alpha1 + self.beta1) - update1 > 0:
+            new_sum1 = (self.alpha1 + self.beta1) - update1
+            self.alpha1 = self.mean1 * new_sum1
+            self.beta1 = (1 - self.mean1) * new_sum1
+        else:
+            new_sum1 = 250
+            self.alpha1 = self.mean1 * new_sum1
+            self.beta1 = (1 - self.mean1) * new_sum1
+
+        update2 = distance2 * n
+        if (self.alpha2 + self.beta2) - update2 > 0:
+            new_sum2 = (self.alpha2 + self.beta2) - update2
+            self.alpha2 = self.mean2 * new_sum2
+            self.beta2 = (1 - self.mean2) * new_sum2
+        else:
+            new_sum2 = 250
+            self.alpha2 = self.mean2 * new_sum2
+            self.beta2 = (1 - self.mean2) * new_sum2
+
+        self.var1 = (self.alpha1 * self.beta1) / ((self.alpha1 + self.beta1) ** 2 * (self.alpha1 + self.beta1 + 1))
+        self.var2 = (self.alpha2 * self.beta2) / ((self.alpha2 + self.beta2) ** 2 * (self.alpha2 + self.beta2 + 1))
+
+    def doubt_distance_sigmoid(self, distance1, distance2, n):
+        update1 = n * (distance1 / (1 - distance1))       # Changing variance in a different way
+        if (self.alpha1 + self.beta1) - update1 > 0:
+            new_sum1 = (self.alpha1 + self.beta1) - update1
+            self.alpha1 = self.mean1 * new_sum1
+            self.beta1 = (1 - self.mean1) * new_sum1
+        else:
+            new_sum1 = 250
+            self.alpha1 = self.mean1 * new_sum1
+            self.beta1 = (1 - self.mean1) * new_sum1
+
+        update2 = n * (distance2 / (1 - distance2))
+        if (self.alpha2 + self.beta2) - update2 > 0:
+            new_sum2 = (self.alpha2 + self.beta2) - update2
+            self.alpha2 = self.mean2 * new_sum2
+            self.beta2 = (1 - self.mean2) * new_sum2
+        else:
+            new_sum2 = 250
+            self.alpha1 = self.mean1 * new_sum2
+            self.beta1 = (1 - self.mean1) * new_sum2
+
+        self.var1 = (self.alpha1 * self.beta1) / ((self.alpha1 + self.beta1) ** 2 * (self.alpha1 + self.beta1 + 1))
+        self.var2 = (self.alpha2 * self.beta2) / ((self.alpha2 + self.beta2) ** 2 * (self.alpha2 + self.beta2 + 1))
+
+
+    def doubt_fancy(self, most_distant1, most_distant2, n):
+        constraint1 = n
+        a1 = abs(self.mean1 - most_distant1)
+        b2 = abs((1 - self.mean1) - (1 - most_distant1))
+        new_sum1 = constraint1 / (a1 + b2)
+        if new_sum1 < (self.alpha1 + self.beta1):
+            self.alpha1 = self.mean1 * new_sum1
+            self.beta1 = (1 - self.mean1) * new_sum1
+
+        constraint2 = n
+        a1 = abs(self.mean2 - most_distant2)
+        b2 = abs((1 - self.mean2) - (1 - most_distant2))
+        new_sum2 = constraint2 / (a1 + b2)
+        if new_sum2 < (self.alpha2 + self.beta2):
             self.alpha2 = self.mean2 * new_sum2
             self.beta2 = (1 - self.mean2) * new_sum2
 
@@ -466,14 +568,14 @@ class Simulation:
         self.rounds = rounds
         self.runs = runs
 
-    def run(self, rounds, type, data_sharing, nr_agents, pulls, theory1, theory2, interval, n, nr_good, kind, prior, epsilon, threshold):  # Initiates one run of the model
+    def run(self, rounds, type, data_sharing, nr_agents, pulls, theory1, theory2, interval, n, nr_good, kind, prior, epsilon, threshold, constraint):  # Initiates one run of the model
         result = list()
         round = Round()
         result.append(round.create_agents(nr_agents, nr_good, kind, prior, epsilon, threshold))   # Collects results for the initial setup (before any action)
 
         for i in range(rounds):           # Initiates one round of the model
             round.collect_data(theory1, theory2, pulls, data_sharing, nr_agents)   # For each round, agents collect data
-            round.action(type, interval, n, pulls, nr_agents)                             # agents do their actions
+            round.action(type, interval, n, pulls, nr_agents, constraint)                             # agents do their actions
             result.append(round.results())                       # agents report results
         return result       # returns results for one run of the model, as a list
 
@@ -497,9 +599,9 @@ def space(runs, rounds, parameters):   # Parameters must be a list of lists with
 
     for combination in combinations:            # Runs simulation for every combination of parameters
         simulation = Simulation(runs, rounds)
-        t, data_sharing, nr_agents, pulls, theory1, theory2, interval, n, nr_good, kind, prior, epsilon, threshold = combination
+        t, data_sharing, nr_agents, pulls, theory1, theory2, interval, n, nr_good, kind, prior, epsilon, threshold, constraint = combination
         for i in range(runs):
-            simulation.add_results(simulation.run(rounds, t, data_sharing, nr_agents, pulls, theory1, theory2, interval, n, nr_good, kind, prior, epsilon, threshold))
+            simulation.add_results(simulation.run(rounds, t, data_sharing, nr_agents, pulls, theory1, theory2, interval, n, nr_good, kind, prior, epsilon, threshold, constraint))
             if i % 100 == 0:
                 print(f"{combination}, run {i} of {runs}")
         results[combination] = simulation.results
